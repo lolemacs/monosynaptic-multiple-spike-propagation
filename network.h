@@ -20,5 +20,6 @@ public:
 	void reset();
 	double run(double time);
 	void inject(std::vector<double>);
-	double test(std::vector<std::vector<double> > injects, std::vector<std::vector<double> > goals, double time);
+	double test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
+	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations);
 };

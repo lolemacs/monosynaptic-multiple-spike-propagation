@@ -15,7 +15,6 @@ void Network::addLayer(){
 }
 
 void Network::addNeuron(int layer, Neuron *n){
-	std::cout << "Added neuron " << n << std::endl;
 	layers[layer].push_back(n);
 }
 
@@ -81,4 +80,38 @@ double Network::test(std::vector<std::vector<double> > testInjects, std::vector<
 		goal++;
 	}
 	return error / i;
+}
+
+void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations){
+	for (int i = 0; i < iterations; i++){
+		std::vector<std::vector<double> >::iterator goal = trainGoals.begin();
+		for (std::vector<std::vector<double> >::iterator injects = trainInjects.begin(); injects != trainInjects.end(); injects++){
+			reset();
+			inject(*injects);
+
+			double desired = (*goal)[0];
+			double actual = run(time);
+			double f1 = desired - actual;
+			//std::cout << f1 << std::endl;
+
+			double f2 = 0;
+			for (auto& n : layers[0]){
+				for (auto& t : n->refractions){
+					for (auto& s : n->synapses)
+						f2 += s.weight * dDecay(desired - t - s.delay);
+				}
+			}
+			if (f2 < 0.1)
+				f2 = 0.1;
+
+			for (auto& n : layers[0]){
+				for (auto& s : n->synapses){
+					double f3 = decay(desired - n->refractions[0] - s.delay);
+					s.weight += -0.1*(f1 * f3 / f2);
+				}
+			}
+
+			goal++;
+		}
+	}
 }

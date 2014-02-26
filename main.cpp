@@ -14,8 +14,10 @@ void main(){
 	Neuron b = Neuron("b");
 	nw.addNeuron(1, &b);
 
-	nw.addSynapse(&a, &b, 5, 1);
-	nw.addSynapse(&a, &b, 5, 7);
+
+	for (int i = 0; i < 16; i++){
+		nw.addSynapse(&a, &b, 5, i);
+	}
 
 	nw.setOutput(&b);
 
@@ -23,7 +25,14 @@ void main(){
 	std::vector<std::vector<double> > injects = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\trainX");
 	std::vector<std::vector<double> > goals = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\trainY");
 
-	cout << nw.test(injects, goals, 10) << endl;
+	nw.train(injects, goals, 16, 100);
+
+	//cout << nw.test(injects, goals, 16) << endl;
+
+	for (auto& s : nw.layers[0][0]->synapses){
+		cout << "Weight: " << s.weight << " - Delay: " << s.delay << endl;
+
+	}
 
 	std::cin.get();
 }

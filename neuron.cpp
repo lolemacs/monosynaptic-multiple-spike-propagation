@@ -30,7 +30,7 @@ void Neuron::inhibit(double clock){
 }
 
 void Neuron::spike(double clock){
-	std::cout << "Spike! at " << clock << " of neuron " << label << std::endl;
+	//std::cout << "Spike! at " << clock << " of neuron " << label << std::endl;
 	refractions.push_back(clock);
 	for (std::vector<Synapse>::iterator i = synapses.begin(); i != synapses.end(); i++){
 		Neuron *n = i->neuron;
