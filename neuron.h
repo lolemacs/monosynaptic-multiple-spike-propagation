@@ -30,5 +30,6 @@ public:
 
 	double weight, delay;
 	Neuron *neuron;
+	double weightGrad;
 	Synapse(Neuron *n, double w, double d);
 };

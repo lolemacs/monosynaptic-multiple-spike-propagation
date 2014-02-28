@@ -76,42 +76,83 @@ double Network::test(std::vector<std::vector<double> > testInjects, std::vector<
 		reset();
 		i++;
 		inject(*injects);
-		error += pow((*goal)[0] - run(time),2);
+		error += pow((*goal)[0] - run(time), 2);
 		goal++;
 	}
 	return error / i;
 }
 
-void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations){
+void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations, bool batch, bool safeStop){
+	double desired, actual;
+	double f1, f2, f3;
+
+	int events = trainGoals.size();
+
+	double rate = 0.1;
+
+	double error = 999;
+	double cError;
+
 	for (int i = 0; i < iterations; i++){
+
+		if (safeStop){
+			cError = test(trainInjects, trainGoals, 16);
+			std::cout << "Error: " << cError << std::endl;
+			if (cError <= error)
+				error = cError;
+			else{
+				return;
+			}
+		}
+
+
+		std::cout << "Epoch : " << i << std::endl;
 		std::vector<std::vector<double> >::iterator goal = trainGoals.begin();
 		for (std::vector<std::vector<double> >::iterator injects = trainInjects.begin(); injects != trainInjects.end(); injects++){
 			reset();
 			inject(*injects);
 
-			double desired = (*goal)[0];
-			double actual = run(time);
-			double f1 = desired - actual;
-			//std::cout << f1 << std::endl;
+			desired = (*goal)[0];
+			actual = run(time);
+			f1 = desired - actual;
 
-			double f2 = 0;
+			f2 = 0;
 			for (auto& n : layers[0]){
 				for (auto& t : n->refractions){
 					for (auto& s : n->synapses)
 						f2 += s.weight * dDecay(desired - t - s.delay);
 				}
 			}
+
 			if (f2 < 0.1)
 				f2 = 0.1;
 
 			for (auto& n : layers[0]){
 				for (auto& s : n->synapses){
-					double f3 = decay(desired - n->refractions[0] - s.delay);
-					s.weight += -0.1*(f1 * f3 / f2);
+					f3 = decay(desired - n->refractions[0] - s.delay);
+					s.weightGrad += -rate*(f1 * f3 / f2);
 				}
 			}
 
+			if (!batch){
+				for (auto& n : layers[0]){
+					for (auto& s : n->synapses)
+					{
+						s.weight += s.weightGrad;
+						s.weightGrad = 0;
+					}
+				}
+			}
 			goal++;
+		}
+
+		if (batch){
+			for (auto& n : layers[0]){
+				for (auto& s : n->synapses){
+					s.weight += s.weightGrad / events;
+					s.weightGrad = 0;
+				}
+			}
 		}
 	}
 }

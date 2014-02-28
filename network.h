@@ -21,5 +21,5 @@ public:
 	double run(double time);
 	void inject(std::vector<double>);
 	double test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
-	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations);
+	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations, bool batch = true, bool safeStop = false);
 };
