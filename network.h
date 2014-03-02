@@ -20,6 +20,8 @@ public:
 	void reset();
 	double run(double time);
 	void inject(std::vector<double>);
+	void changeWeights(int events);
 	double test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
 	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations, bool batch = true, bool safeStop = false);
+	void trainIteration(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, bool batch);
 };

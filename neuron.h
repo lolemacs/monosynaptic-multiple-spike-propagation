@@ -10,7 +10,7 @@ class Synapse;
 class Neuron {
 public:
 	std::string label;
-	double v, vt;
+	double v, vt, delta;
 	std::vector<double> refractions;
 	std::vector<std::vector<double> > spikes;
 	std::vector<Synapse> synapses;

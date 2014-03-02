@@ -2,6 +2,7 @@
 
 Neuron::Neuron(){
 	label = "generic";
+	delta = 0;
 	v = 0;
 	vt = 1;
 }
@@ -31,7 +32,8 @@ void Neuron::inhibit(double clock){
 
 void Neuron::spike(double clock){
 	//std::cout << "Spike! at " << clock << " of neuron " << label << std::endl;
-	refractions.push_back(clock);
+	if (refractions.empty())
+		refractions.push_back(clock);
 	for (std::vector<Synapse>::iterator i = synapses.begin(); i != synapses.end(); i++){
 		Neuron *n = i->neuron;
 		std::vector<double> v;
@@ -45,7 +47,10 @@ bool Neuron::tick(double clock){
 	v = 0;
 
 	excite(clock);
-	inhibit(clock);
+	//inhibit(clock);
+
+	if (label == "b1")
+		;
 
 	if (v >= vt){
 		spike(clock);
