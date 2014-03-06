@@ -3,6 +3,8 @@
 Network::Network(){
 	time = 0;
 	clock = 0.5;
+	minDelay = 1;
+	maxDelay = 16;
 }
 
 void Network::setOutput(Neuron *n){
@@ -16,6 +18,30 @@ void Network::addLayer(){
 
 void Network::addNeuron(int layer, Neuron *n){
 	layers[layer].push_back(n);
+}
+
+void Network::addNeurons(int layer, int amount, bool inhibitory){
+	Neuron* n;
+	double w;
+	for (int i = 0; i < amount; i++){
+		std::string r = std::to_string(layer) + std::to_string(i);
+		n = new Neuron(r, inhibitory);
+		addNeuron(layer, n);
+		if (layer > 0){
+			for (auto& m : layers[layer - 1]){
+				for (int d = minDelay; d < maxDelay; d++)
+				{
+					w = rand() % 600 / 1000.0 - 0.1;
+				if (m->inhibitory) w = -w / 2.0;
+					addSynapse(m, n, w, d);
+				}
+			}
+		}
+	}
+}
+
+void Network::finish(){
+	setOutput(layers.back().front());
 }
 
 void Network::addSynapse(Neuron *origin, Neuron *destiny, double weight, double delay){
@@ -69,6 +95,7 @@ void Network::reset(){
 
 double Network::test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time){
 	double error = 0;
+	double actual;
 	int i = 0;
 
 	std::vector<std::vector<double> >::iterator goal = testGoals.begin();
@@ -76,7 +103,9 @@ double Network::test(std::vector<std::vector<double> > testInjects, std::vector<
 		reset();
 		i++;
 		inject(*injects);
-		error += pow((*goal)[0] - run(time), 2);
+		actual = run(time);
+		std::cout << "Goal: " << (*goal)[0] << "   -     Actual: " << actual << std::endl;
+		error += pow((*goal)[0] - actual, 2);
 		goal++;
 	}
 	return error / i;
@@ -87,6 +116,10 @@ void Network::changeWeights(int events){
 		for (auto& n : l){
 			for (auto& s : n->synapses){
 				s.weight += s.weightGrad / events;
+				/*if (!n->inhibitory && s.weight < 0)
+					s.weight = 0;
+				else if (n->inhibitory && s.weight > 0)
+					s.weight = 0;*/
 				s.weightGrad = 0;
 			}
 		}
@@ -107,7 +140,7 @@ void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<
 			if (cError <= error)
 				error = cError;
 			else{
-				return;
+				//return;
 			}
 		}
 
@@ -122,9 +155,9 @@ void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<
 
 void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, bool batch){
 	double desired, actual;
-	double f1, f2, f3, interF1;
+	double f1, f2, f3;
 
-	double rate = 0.1;
+	double rate = 0.02;
 
 	std::vector<std::vector<double> >::iterator goal = trainGoals.begin();
 	for (std::vector<std::vector<double> >::iterator injects = trainInjects.begin(); injects != trainInjects.end(); injects++){
@@ -136,13 +169,16 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 
 		for (std::vector<std::vector<Neuron*> >::reverse_iterator layer = layers.rbegin(); layer != layers.rend(); ++layer){
 			std::vector<Neuron*> h = *layers.rbegin();
-			
+
 			int a = 1;
 
 			if (layer == layers.rbegin()){
 				//std::cout << "Output layer :" << (*layer)[0]->label << std::endl;
 				for (auto& output : *layer){
-					f1 = actual - desired;
+
+					if (actual == -1)
+						actual = time;
+					f1 = desired - actual;
 
 					f2 = 0;
 					for (auto& n : *(layer + 1)){
@@ -152,15 +188,12 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 						}
 					}
 
-					if (f2 < 0.1)
-						f2 = 0.1;
-
 					output->delta = f1 / f2;
 
 					for (auto& n : *(layer + 1)){
 						for (auto& s : n->synapses){
 							f3 = decay(output->refractions[0] - n->refractions[0] - s.delay);
-							s.weightGrad += rate * output->delta * f3;
+							s.weightGrad += -rate * output->delta * f3;
 						}
 					}
 				}
@@ -168,33 +201,29 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 			else if (layer != layers.rend() - 1){
 				//std::cout << "Hidden layer :" << (*layer)[0]->label << std::endl;
 				for (auto& output : *layer){
+
 					f1 = 0;
-					for (auto& n : *(layer - 1)){
-						interF1 = 0;
-						for (auto& t : n->refractions){
-							for (auto& s : n->synapses)
-								interF1 += s.weight * dDecay(desired - t - s.delay);
-						}
-						f1 += n->delta * interF1;
-					}
+					for (auto& s : output->synapses)
+						f1 += s.neuron->delta * s.weight * dDecay(s.neuron->refractions[0] - output->refractions[0] - s.delay);
 
 					f2 = 0;
 					for (auto& n : *(layer + 1)){
 						for (auto& t : n->refractions){
-							for (auto& s : n->synapses)
-								f2 += s.weight * dDecay(desired - t - s.delay);
+							for (auto& s : n->synapses){
+								if (s.neuron == output)
+									f2 += s.weight * dDecay(output->refractions[0] - t - s.delay);
+							}
 						}
 					}
-
-					if (f2 < 0.1)
-						f2 = 0.1;
 
 					output->delta = f1 / f2;
 
 					for (auto& n : *(layer + 1)){
 						for (auto& s : n->synapses){
-							f3 = decay(desired - n->refractions[0] - s.delay);
-							s.weightGrad += -rate * output->delta * f3;
+							if (s.neuron == output){
+								f3 = decay(output->refractions[0] - n->refractions[0] - s.delay);
+								s.weightGrad += -rate * output->delta * f3;
+							}
 						}
 					}
 				}

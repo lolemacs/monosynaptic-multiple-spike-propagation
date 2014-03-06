@@ -1,16 +1,12 @@
 #include "neuron.h"
 
-Neuron::Neuron(){
-	label = "generic";
-	delta = 0;
-	v = 0;
-	vt = 1;
-}
 
-Neuron::Neuron(std::string l){
+Neuron::Neuron(std::string l, bool inh){
 	label = l;
+	inhibitory = inh;
 	v = 0;
 	vt = 1;
+	delta = 0;
 }
 
 void Neuron::addSynapse(Neuron *n, double w, double d){
@@ -48,9 +44,6 @@ bool Neuron::tick(double clock){
 
 	excite(clock);
 	//inhibit(clock);
-
-	if (label == "b1")
-		;
 
 	if (v >= vt){
 		spike(clock);

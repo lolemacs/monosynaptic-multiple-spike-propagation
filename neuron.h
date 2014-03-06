@@ -11,12 +11,12 @@ class Neuron {
 public:
 	std::string label;
 	double v, vt, delta;
+	bool inhibitory;
 	std::vector<double> refractions;
 	std::vector<std::vector<double> > spikes;
 	std::vector<Synapse> synapses;
 
-	Neuron();
-	Neuron(std::string l);
+	Neuron(std::string l = "generic", bool inhibitory = false);
 	void addSynapse(Neuron *n, double w, double d);
 	bool tick(double clock);
 	void excite(double clock);

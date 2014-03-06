@@ -7,13 +7,15 @@
 inline double decay(double s){
 	if (s <= 0)
 		return 0;
-	return exp(-s / 4.0) - exp(-s / 2.0);
+	return exp(-s / 10.0) - exp(-s / 5.0);
+	//return exp(-s / 4.0) - exp(-s / 2.0);
 }
 
 inline double dDecay(double s){
 	if (s <= 0)
 		return 0;
-	return exp(-s / 2.0) / 2.0 - exp(-s / 4.0) / 4.0;
+	return exp(-s / 5.0) / 5.0 - exp(-s / 10.0) / 10.0;
+	//return exp(-s / 2.0) / 2.0 - exp(-s / 4.0) / 4.0;
 }
 
 inline double refrac(double s){
