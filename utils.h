@@ -69,5 +69,32 @@ inline std::vector<std::vector<double> > readFile(std::string s){
 	return sets;
 }
 
+inline int getArrayIndexMin(double* list, int size){
+	int index = -1;
+	double min = 999;
+	for (int i = 0; i < size; i++){
+		if (list[i] < min){
+			index = i;
+			min = list[i];
+		}
+	}
+	return index;
+}
+
+inline int getVectorIndexMin(std::vector<double> list){
+	int index = -1;
+	double min = 999;
+	for (unsigned i = 0; i < list.size(); i++){
+		if (list[i] < min){
+			index = i;
+			min = list[i];
+		}
+	}
+	return index;
+}
 
 
+inline void printArray(double* list, int size){
+	for (int i = 0; i < size; i++)
+		std::cout << list[i] << " ";
+}

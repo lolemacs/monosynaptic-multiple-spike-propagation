@@ -42,12 +42,13 @@ void Neuron::spike(double clock){
 bool Neuron::tick(double clock){
 	v = 0;
 
-	excite(clock);
-	//inhibit(clock);
-
-	if (v >= vt){
-		spike(clock);
-		return true;
+	if (refractions.empty()){
+		excite(clock);
+		//inhibit(clock);
+		if (v >= vt){
+			spike(clock);
+			return true;
+		}
 	}
 	return false;
 }
@@ -68,4 +69,5 @@ Synapse::Synapse(Neuron *n, double w, double d){
 	weight = w;
 	delay = d;
 	weightGrad = 0;
+	delayGrad = 0;
 }

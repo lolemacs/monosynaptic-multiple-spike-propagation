@@ -8,7 +8,8 @@
 class Network {
 public:
 	std::vector<std::vector<Neuron*> > layers;
-	double time, clock, minDelay, maxDelay;
+	double time, clock, minDelay, maxDelay, terminalOrder;
+	int numberOutputs;
 	Neuron *output;
 
 	Network();
@@ -19,11 +20,12 @@ public:
 	void addSynapse(Neuron *origin, Neuron *destiny, double weight, double delay);
 	bool tick();
 	void reset();
-	double run(double time);
+	double* run(double time);
 	void inject(std::vector<double>);
 	void changeWeights(int events);
+	void changeDelays(int events);
 	void finish();
-	double test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
+	double* test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
 	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations, bool batch = true, bool safeStop = false);
 	void trainIteration(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, bool batch);
 };

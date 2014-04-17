@@ -5,6 +5,8 @@ Network::Network(){
 	clock = 0.5;
 	minDelay = 1;
 	maxDelay = 16;
+	terminalOrder = 15;
+	numberOutputs = 0;
 }
 
 void Network::setOutput(Neuron *n){
@@ -29,10 +31,10 @@ void Network::addNeurons(int layer, int amount, bool inhibitory){
 		addNeuron(layer, n);
 		if (layer > 0){
 			for (auto& m : layers[layer - 1]){
-				for (int d = minDelay; d < maxDelay; d++)
+				for (double d = minDelay; d < maxDelay; d += (maxDelay - minDelay) / terminalOrder)
 				{
 					w = rand() % 600 / 1000.0 - 0.1;
-				if (m->inhibitory) w = -w / 2.0;
+					if (m->inhibitory) w = -w / 2.0;
 					addSynapse(m, n, w, d);
 				}
 			}
@@ -41,6 +43,7 @@ void Network::addNeurons(int layer, int amount, bool inhibitory){
 }
 
 void Network::finish(){
+	numberOutputs = layers.back().size();
 	setOutput(layers.back().front());
 }
 
@@ -63,12 +66,23 @@ bool Network::tick(){
 }
 
 
-double Network::run(double t){
-	double output = -1;
-	for (double i = 0; i < t; i += clock){
-		if (tick() && output == -1)
-			output = time;
+double* Network::run(double t){
+	double* output = new double[numberOutputs];
+	for (double i = 0; i < t; i += clock)
+		tick();
+
+	int i = 0;
+	for (auto& neuron : layers.back()){
+		if (neuron->refractions.empty()){
+			neuron->refractions.push_back(30);
+			output[i] = 30;
+			//throw 1;
+		}
+		else
+			output[i] = neuron->refractions[0];
+		i++;
 	}
+
 	return output;
 }
 
@@ -93,9 +107,10 @@ void Network::reset(){
 	}
 }
 
-double Network::test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time){
+double* Network::test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time){
 	double error = 0;
-	double actual;
+	double misses = 0;
+	double* actual;
 	int i = 0;
 
 	std::vector<std::vector<double> >::iterator goal = testGoals.begin();
@@ -104,11 +119,31 @@ double Network::test(std::vector<std::vector<double> > testInjects, std::vector<
 		i++;
 		inject(*injects);
 		actual = run(time);
-		std::cout << "Goal: " << (*goal)[0] << "   -     Actual: " << actual << std::endl;
-		error += pow((*goal)[0] - actual, 2);
+
+		if (goal->size() == 1){
+			//std::cout << "Goal: " << (*goal)[0] << "  |   Actual: " << actual[0] << std::endl;
+			if ((*goal)[0] == 10 && (pow(actual[0] - 14, 2) <= pow(actual[0] - 10, 2)))
+				misses++;
+			if ((*goal)[0] == 14 && (pow(actual[0] - 14, 2) >= pow(actual[0] - 10, 2)))
+				misses++;
+		}
+
+		else{
+			if (getArrayIndexMin(actual, numberOutputs) != getVectorIndexMin(*goal))
+				misses++;
+		}
+
+		for (int j = 0; j < numberOutputs; j++)
+			error += pow((*goal)[j] - actual[j], 2);
+
 		goal++;
 	}
-	return error / i;
+	misses /= testGoals.size();
+	error /= i;
+	double* r = new double[2];
+	r[0] = error;
+	r[1] = misses;
+	return r;
 }
 
 void Network::changeWeights(int events){
@@ -117,10 +152,21 @@ void Network::changeWeights(int events){
 			for (auto& s : n->synapses){
 				s.weight += s.weightGrad / events;
 				/*if (!n->inhibitory && s.weight < 0)
-					s.weight = 0;
+				s.weight = 0;
 				else if (n->inhibitory && s.weight > 0)
-					s.weight = 0;*/
+				s.weight = 0;*/
 				s.weightGrad = 0;
+			}
+		}
+	}
+}
+
+void Network::changeDelays(int events){
+	for (auto& l : layers){
+		for (auto& n : l){
+			for (auto& s : n->synapses){
+				s.delay += s.delayGrad / events;
+				s.delayGrad = 0;
 			}
 		}
 	}
@@ -135,7 +181,7 @@ void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<
 	for (int i = 0; i < iterations; i++){
 
 		if (safeStop){
-			cError = test(trainInjects, trainGoals, 16);
+			cError = test(trainInjects, trainGoals, 16.5)[1];
 			std::cout << "Error: " << cError << std::endl;
 			if (cError <= error)
 				error = cError;
@@ -148,23 +194,25 @@ void Network::train(std::vector<std::vector<double> > trainInjects, std::vector<
 
 		trainIteration(trainInjects, trainGoals, time, batch);
 
-		if (batch)
+		if (batch){
 			changeWeights(events);
+			changeDelays(events);
+		}
 	}
 }
 
 void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, bool batch){
-	double desired, actual;
-	double f1, f2, f3;
+	double* actual;
+	double f1, f2, f3, f3_2;
 
-	double rate = 0.02;
+	double rate = 0.001;
+	double rate2 = 0;
 
 	std::vector<std::vector<double> >::iterator goal = trainGoals.begin();
 	for (std::vector<std::vector<double> >::iterator injects = trainInjects.begin(); injects != trainInjects.end(); injects++){
 		reset();
 		inject(*injects);
 
-		desired = (*goal)[0];
 		actual = run(time);
 
 		for (std::vector<std::vector<Neuron*> >::reverse_iterator layer = layers.rbegin(); layer != layers.rend(); ++layer){
@@ -173,12 +221,11 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 			int a = 1;
 
 			if (layer == layers.rbegin()){
-				//std::cout << "Output layer :" << (*layer)[0]->label << std::endl;
+
+				int j = 0;
 				for (auto& output : *layer){
 
-					if (actual == -1)
-						actual = time;
-					f1 = desired - actual;
+					f1 = (*goal)[j] - actual[j];
 
 					f2 = 0;
 					for (auto& n : *(layer + 1)){
@@ -188,16 +235,25 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 						}
 					}
 
+					if (f2 < 0.1)
+						f2 = 0.1;
+
 					output->delta = f1 / f2;
 
-					for (auto& n : *(layer + 1)){
-						for (auto& s : n->synapses){
-							f3 = decay(output->refractions[0] - n->refractions[0] - s.delay);
-							s.weightGrad += -rate * output->delta * f3;
-						}
+					j++;
+
+				}
+
+				for (auto& n : *(layer + 1)){
+					for (auto& s : n->synapses){
+						f3 = decay(s.neuron->refractions[0] - n->refractions[0] - s.delay);
+						s.weightGrad += -rate * s.neuron->delta * f3;
+						f3_2 = -s.weight * dDecay(s.neuron->refractions[0] - n->refractions[0] - s.delay);
+						s.delayGrad += -rate2 * s.neuron->delta * f3_2;
 					}
 				}
 			}
+
 			else if (layer != layers.rend() - 1){
 				//std::cout << "Hidden layer :" << (*layer)[0]->label << std::endl;
 				for (auto& output : *layer){
@@ -216,6 +272,9 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 						}
 					}
 
+					if (f2 < 0.1)
+						f2 = 0.1;
+
 					output->delta = f1 / f2;
 
 					for (auto& n : *(layer + 1)){
@@ -230,8 +289,10 @@ void Network::trainIteration(std::vector<std::vector<double> > trainInjects, std
 			}
 		}
 
-		if (!batch)
+		if (!batch){
 			changeWeights(1);
+			changeDelays(1);
+		}
 		goal++;
 	}
 }
