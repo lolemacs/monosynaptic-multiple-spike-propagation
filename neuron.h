@@ -10,7 +10,7 @@ class Synapse;
 class Neuron {
 public:
 	std::string label;
-	double v, vt, delta;
+	double v, vt, delta, bestVt;
 	bool inhibitory;
 	std::vector<double> refractions;
 	std::vector<std::vector<double> > spikes;
@@ -28,7 +28,7 @@ public:
 class Synapse {
 public:
 
-	double weight, delay;
+	double weight, delay, bestWeight, bestDelay;
 	Neuron *neuron;
 	double weightGrad, delayGrad;
 	Synapse(Neuron *n, double w, double d);

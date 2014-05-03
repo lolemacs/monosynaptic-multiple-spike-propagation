@@ -24,8 +24,14 @@ public:
 	void inject(std::vector<double>);
 	void changeWeights(int events);
 	void changeDelays(int events);
+	void rollBackWeights();
+	void rollBackDelays();
+	void saveWeights();
+	void saveDelays();
+	void rollBackPotentials();
+	void savePotentials();
 	void finish();
 	double* test(std::vector<std::vector<double> > testInjects, std::vector<std::vector<double> > testGoals, double time);
-	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, int iterations, bool batch = true, bool safeStop = false);
+	void train(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, std::vector<std::vector<double> > validInjects, std::vector<std::vector<double> > validGoals, double time, int iterations, bool batch = true, bool safeStop = false);
 	void trainIteration(std::vector<std::vector<double> > trainInjects, std::vector<std::vector<double> > trainGoals, double time, bool batch);
 };

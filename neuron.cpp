@@ -70,4 +70,6 @@ Synapse::Synapse(Neuron *n, double w, double d){
 	delay = d;
 	weightGrad = 0;
 	delayGrad = 0;
+	bestWeight = 0;
+	bestDelay = 0;
 }
