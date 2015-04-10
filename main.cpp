@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void main(){
+void main(int argc, char *argv[]){
 	Network nw = Network();
 
 	nw.addLayer();
@@ -20,11 +20,11 @@ void main(){
 	nw.finish();
 
 
-	std::vector<std::vector<double> > injects = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\trainX");
-	std::vector<std::vector<double> > goals = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\trainY");
+	std::vector<std::vector<double> > injects = readFile(argv[1]);
+	std::vector<std::vector<double> > goals = readFile(argv[2]);
 
-	std::vector<std::vector<double> > vInjects = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\validX");
-	std::vector<std::vector<double> > vGoals = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\validY");
+	std::vector<std::vector<double> > vInjects = readFile(argv[3]);
+	std::vector<std::vector<double> > vGoals = readFile(argv[4]);
 
 	cout << "Non-trained: " << nw.test(injects, goals, 16.5)[1] << endl;
 
@@ -32,8 +32,8 @@ void main(){
 
 	cout << "Trained: " << nw.test(injects, goals, 16.5)[1] << endl;
 
-	injects = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\testX");
-	goals = readFile("C:\\Users\\Pedro\\Documents\\Faculdade\\ProjFin\\iris\\1\\testY");
+	injects = readFile(argv[5]);
+	goals = readFile(argv[6]);
 
 	cout << "Test: " << nw.test(injects, goals, 16.5)[1] << endl;
 
