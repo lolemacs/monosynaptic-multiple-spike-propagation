@@ -1,0 +1,1 @@
+Extension to Olaf Booij's MultiSpikeProp algorithm for learning in Spiking Neural Networks.
